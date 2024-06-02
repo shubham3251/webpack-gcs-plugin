@@ -1,28 +1,24 @@
 const path = require("path");
 const readDir = require("recursive-readdir");
 
-const UPLOAD_IGNORES = [".DS_Store"];
-
-const DEFAULT_UPLOAD_OPTIONS = {
-  predefinedAcl: "publicRead",
-};
+const UPLOAD_IGNORE_LIST = [".DS_Store"];
 
 const REQUIRED_GCS_OPTS = ["bucket"];
 const PATH_SEP = path.sep;
 const GCS_PATH_SEP = "/";
-const DEFAULT_TRANSFORM = (item) => Promise.resolve(item);
+const identityTransform = (item) => Promise.resolve(item);
 
-const addTrailingGcsSep = (fPath) => {
+const appendGcsSeparator = (fPath) => {
   return fPath ? fPath.replace(/\/?(\?|#|$)/, "/$1") : fPath;
 };
 
-const addSeperatorToPath = (fPath) => {
+const addPathSeparator = (fPath) => {
   if (!fPath) return fPath;
 
   return fPath.endsWith(PATH_SEP) ? fPath : fPath + PATH_SEP;
 };
 
-const translatePathFromFiles = (rootPath) => {
+const generateFilePaths = (rootPath) => {
   return (files) => {
     return files.map((file) => {
       return {
@@ -33,10 +29,10 @@ const translatePathFromFiles = (rootPath) => {
   };
 };
 
-const getDirectoryFilesRecursive = (dir, ignores = []) => {
+const retrieveFilesRecursively = (dir, ignores = []) => {
   return new Promise((resolve, reject) => {
     readDir(dir, ignores, (err, files) => (err ? reject(err) : resolve(files)));
-  }).then(translatePathFromFiles(dir));
+  }).then(generateFilePaths(dir));
 };
 
 const isRegExp = (value) => {
@@ -59,52 +55,15 @@ const testRule = (rule, subject) => {
 
 const isFunction = (fn) => typeof fn == "function";
 
-function partition(arr, predicate) {
-  const trueValues = [];
-  const falseValues = [];
-
-  for (let i = 0; i < arr.length; i++) {
-    const value = arr[i];
-    const isValid = predicate(value);
-    if (isValid) {
-      trueValues.push(value);
-    } else {
-      falseValues.push(value);
-    }
-  }
-
-  return [trueValues, falseValues];
-}
-
-function uniq(arr, key) {
-  const uniqueValues = {};
-  const result = [];
-
-  for (let i = 0; i < arr.length; i++) {
-    const value = arr[i][key];
-
-    if (!uniqueValues[value]) {
-      uniqueValues[value] = true;
-      result.push(arr[i]);
-    }
-  }
-
-  return result;
-}
-
 module.exports = {
-  UPLOAD_IGNORES,
-  DEFAULT_UPLOAD_OPTIONS,
+  UPLOAD_IGNORE_LIST,
   REQUIRED_GCS_OPTS,
   PATH_SEP,
   GCS_PATH_SEP,
-  DEFAULT_TRANSFORM,
-  addTrailingGcsSep,
-  addSeperatorToPath,
-  translatePathFromFiles,
-  getDirectoryFilesRecursive,
+  identityTransform,
+  appendGcsSeparator,
+  addPathSeparator,
+  retrieveFilesRecursively,
   testRule,
   isFunction,
-  uniq,
-  partition,
 };
